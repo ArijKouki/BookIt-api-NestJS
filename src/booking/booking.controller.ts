@@ -36,7 +36,7 @@ export class BookingController {
     return await this.bookingService.createBooking(userId, dto, res);
   }
   // update booking (PATCH)
-  @Patch('/booking/update/:bookingId')
+  @Patch('/update/:bookingId')
   async updateBookingById(
     @Param('bookingId') bookingId: string,
     @GetUser() userId: string,
@@ -50,7 +50,7 @@ export class BookingController {
       res,
     );
   }
-  @Delete('/booking/delete/:id')
+  @Delete('/delete/:id')
   async deleteBookingById(@Param('id') id: string, @Res() res: Response) {
     return await this.bookingService.deleteBookingById(id, res);
   }

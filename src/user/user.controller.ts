@@ -22,6 +22,7 @@ export class UserController {
   @UseGuards(AuthGuard)
   @Get('/me')
   async getUser(@GetUser() userId: string, @Res() res: Response) {
+    console.log(userId);
     return await this.userService.getUser(userId, res);
   }
 

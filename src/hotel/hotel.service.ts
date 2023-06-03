@@ -124,7 +124,7 @@ export class HotelService {
   async getHotel(hotelId: string, res: Response) {
     try {
       const hotel = await this.prisma.hotel.findUnique({
-        where: { id: hotelId },
+        where: { id: hotelId }, include:{rooms: true, bookings: true}
       });
       if (!hotel) {
         return this.resHandler.clientError(res, 'Hotel account does not exist');

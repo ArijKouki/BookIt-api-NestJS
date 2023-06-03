@@ -32,18 +32,28 @@ export class UserService {
         const preferences = await this.prisma.preferences.findUnique({
           where: { userId },
         });
-        delete preferences.id;
-        delete preferences.userId;
+
+        if (preferences){
+          delete preferences.id;
+          delete preferences.userId;
+          console.log(preferences);
+        }
 
         const creditCardDetails =
           await this.prisma.creditCardDetails.findUnique({
             where: { userId },
           });
-        delete creditCardDetails.id;
-        delete creditCardDetails.userId;
+
+        if(creditCardDetails) {
+          delete creditCardDetails.id;
+          delete creditCardDetails.userId;
+          console.log(creditCardDetails);
+        }
+
         const payload = {
           user: { ...user, preferences, creditCardDetails },
         };
+
         return this.resHandler.requestSuccessful({ res, payload });
       } else {
         return this.resHandler.clientError(res, 'This user does not exist!');

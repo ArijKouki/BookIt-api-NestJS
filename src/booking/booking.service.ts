@@ -18,6 +18,18 @@ export class BookingService {
    * @param res Express Response Object
    * @returns ResHandler
    */
+
+  // Helper function to calculate the number of nights
+  private getNumberOfNights(checkInDate: Date, checkOutDate: Date): number {
+    const oneDay = 24 * 60 * 60 * 1000; // Number of milliseconds in one day
+    const startDate = new Date(checkInDate);
+    const endDate = new Date(checkOutDate);
+    const diffDays = Math.round(
+      Math.abs((startDate.getTime() - endDate.getTime()) / oneDay),
+    );
+    return diffDays;
+  }
+
   async createBooking(userId: string, dto: CreateBookingDto, res: Response) {
     try {
       const user = await this.prisma.user.findUnique({
@@ -30,22 +42,31 @@ export class BookingService {
         return this.resHandler.clientError(res, 'User or room does not exist.');
       } else {
         if (dto.numberOfRooms < room.numberAvailable) {
+          // Calculate booking cost
+          const numberOfNights = this.getNumberOfNights(
+            dto.checkInDate,
+            dto.checkOutDate,
+          );
+          const cost = numberOfNights * dto.numberOfRooms * room.price;
+
           // create booking
           await this.prisma.booking.create({
             data: {
               ...dto,
-              cost: dto.numberOfRooms * room.price,
+              cost,
               userId: user.id,
               roomId: room.id,
               hotelId: room.hotelId,
             },
           });
+
           // update available room number
           await this.prisma.room.update({
             where: { id: room.id },
             data: { numberAvailable: room.numberAvailable - dto.numberOfRooms },
           });
-          //   return response
+
+          // return response
           return this.resHandler.requestSuccessful({
             res,
             message: 'Booking created successfully',
@@ -63,14 +84,7 @@ export class BookingService {
     }
   }
 
-  /**
-   * Update Booking Function
-   * @param bookingId: Booking id
-   * @param userId User's Id
-   * @param dto Class containing booking details to be updated
-   * @param res Express Response Object
-   * @returns ResHandler
-   */
+
   async updateBookingById(
     bookingId: string,
     userId: string,
@@ -84,49 +98,36 @@ export class BookingService {
       const room = await this.prisma.room.findUnique({
         where: { id: dto.roomId },
       });
-      // if user is changing number of rooms check if its less than existing number of rooms in the booking.
-      // If it is, update room with the difference. if its not update subtract difference from number of available rooms
 
       if (!booking) {
         return this.resHandler.clientError(res, 'Booking does not exist');
       } else {
-        if (dto.numberOfRooms && dto.numberOfRooms <= booking.numberOfRooms) {
-          await this.prisma.room.update({
-            where: { id: room.id },
-            data: {
-              numberAvailable:
-                room.numberAvailable +
-                booking.numberOfRooms -
-                dto.numberOfRooms,
-            },
-          });
-        } else if (
-          dto.numberOfRooms &&
-          dto.numberOfRooms > booking.numberOfRooms &&
-          dto.numberOfRooms <= room.numberAvailable
-        ) {
-          await this.prisma.room.update({
-            where: { id: room.id },
-            data: {
-              numberAvailable:
-                room.numberAvailable -
-                dto.numberOfRooms +
-                booking.numberOfRooms,
-            },
-          });
-        } else if (dto.numberOfRooms > room.numberAvailable) {
-          return this.resHandler.clientError(
-            res,
-            'The number of available rooms is less than your desired booking',
-          );
-        }
 
+
+        // Calculate new booking cost
+        const newNumberOfNights = this.getNumberOfNights(
+          dto.checkInDate,
+          dto.checkOutDate,
+        );
+        const newCost = newNumberOfNights * dto.numberOfRooms * room.price;
+
+        // Update room availability
+        await this.prisma.room.update({
+          where: { id: room.id },
+          data: {
+            numberAvailable: room.numberAvailable + booking.numberOfRooms - dto.numberOfRooms,
+          },
+        });
+
+        // Update booking and cost
         await this.prisma.booking.update({
           where: { id: bookingId },
           data: {
             ...dto,
+            cost: newCost,
           },
         });
+
         return this.resHandler.requestSuccessful({
           res,
           message: 'Booking updated successfully',
@@ -137,6 +138,10 @@ export class BookingService {
       return this.resHandler.serverError(res, 'Error updating booking details');
     }
   }
+
+
+
+
 
   /**
    * Get Booking by Id function
@@ -176,7 +181,10 @@ export class BookingService {
         return this.resHandler.clientError(res, 'User does not exist');
       } else {
         const bookings = await this.prisma.booking.findMany({
-          where: { userId },
+          where: { userId }, include: {
+            hotel: true,
+            room: true,
+          },
         });
         if (bookings.length > 0) {
           bookings.forEach((booking) => {

@@ -151,11 +151,12 @@ export class HotelService {
   async getHotelById(id: string, res: Response) {
     try {
       const hotel = await this.prisma.hotel.findUnique({ where: { id } });
-      delete hotel.password;
-      delete hotel.createdAt;
+
       if (!hotel) {
         return this.resHandler.clientError(res, 'Hotel account does not exist');
       }
+      delete hotel.password;
+      delete hotel.createdAt;
 
       return this.resHandler.requestSuccessful({
         res,

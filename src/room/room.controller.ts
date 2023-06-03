@@ -14,7 +14,7 @@ import { RoomService } from './room.service';
 import { GetHotel } from '../decorators';
 import { HotelAuthGuard } from '../guards';
 import { NewRoomDto, UpdateRoomDto } from './dto';
-@Controller('hotels/rooms')
+@Controller('rooms')
 export class RoomController {
   constructor(private roomService: RoomService) {}
 

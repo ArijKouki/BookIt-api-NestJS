@@ -7,7 +7,7 @@ import {
   Res,
   UseGuards,
   Param,
-  Patch, UploadedFile, UseInterceptors
+  Patch, UploadedFile, UseInterceptors, UploadedFiles
 } from "@nestjs/common";
 import { LoginHotelDto, RegisterHotelDto, UpdateHotelDto } from './dto';
 import { HotelService } from './hotel.service';
@@ -15,7 +15,8 @@ import { Request, Response } from 'express';
 import { GetHotel } from '../decorators';
 import {  HotelAuthGuard } from '../guards';
 import { checkOldPasswordDto, ResetPasswordDto } from '../auth/dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
 
 
 @Controller('hotels')
@@ -51,10 +52,25 @@ export class HotelController {
   }
 
   @Post('/register')
-  @UseInterceptors(FileInterceptor('photo'))
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      fileFilter: (req, file, callback) => {
+        callback(null, true); // Allow all files
+      },
+      storage: diskStorage({
+        destination: './src/images', // Set the destination folder for uploaded files
+        filename: (req, file, callback) => {
+          callback(null, file.originalname); // Use the original filename
+        },
+      }),
+    })
+  )
   async registerHotel(@Body() dto: RegisterHotelDto, @UploadedFile() photo: Express.Multer.File, @Res() res: Response) {
+    console.log(photo);
     return await this.hotelService.registerHotel(dto, photo, res);
   }
+
+
 
   @Post('/login')
   async loginHotel(

@@ -28,15 +28,10 @@ import { diskStorage } from 'multer';
     DatabaseModule,
     HelpersModule,
     RoomModule,
-    MulterModule.register({
-      storage: diskStorage({
-        destination: './src/images',
-        filename: (req, file, cb) => {
-          return cb(null, file.originalname);
-        },
-      })
-    }),
-
+    /*MulterModule.register({
+      //dest: './src/images',
+      dest: 'uploads',
+    }),*/
   ],
   providers: [
     AuthService,

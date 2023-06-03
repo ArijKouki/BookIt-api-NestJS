@@ -45,19 +45,19 @@ export class HotelService {
 
   async registerHotel(dto: RegisterHotelDto, photo, res: Response) {
     try {
-      // Check if hotel exists
-      const hotel = await this.prisma.hotel.findUnique({
-        where: { email: dto.email },
-      });
+
+        const hotel = await this.prisma.hotel.findUnique({
+          where: { email: dto.email },
+        });
 
       if (!hotel) {
         const password = await argon.hash(dto.password);
-        console.log(photo);
-        const fileName = photo?.originalname; // Get the uploaded file name
+        const fileName = photo?.originalname;
         console.log(fileName);
 
+
         await this.prisma.hotel.create({
-          data: { ...dto, password, photo: fileName }, // Update DTO with the file name
+          data: { ...dto, password, photo: fileName },
         });
 
         return this.resHandler.requestSuccessful({
